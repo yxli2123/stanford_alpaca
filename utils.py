@@ -350,6 +350,7 @@ class QLinearLR(nn.Module):
         self.register_buffer('absmax', torch.empty((in_features * out_features // block_size, 1), dtype=torch.float32))
         self.lora_A = nn.Parameter(torch.empty((reduced_rank, in_features), dtype=torch.float32))
         self.lora_B = nn.Parameter(torch.empty((out_features, reduced_rank), dtype=torch.float32))
+        
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, dtype=torch.float32), requires_grad=False)
         else:
@@ -393,7 +394,7 @@ def substitute_layer_weights_iter_quant(module,
                       'q_proj', 'k_proj', 'v_proj', 'out_proj', 'fc1', 'fc2']
     if block_name is None:
         block_name = ['pooler', 'classifier', 'LayerNorm', 'embeddings']
-    assert (num_bits == 8 or num_bits == 4 or num_bits == 2) and num_iter > 0
+    assert (num_bits == 8 or num_bits == 4 or num_bits == 2) and num_iter >= 0
 
     allow_module = [nn.Linear, Linear]
 

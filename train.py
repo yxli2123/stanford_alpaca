@@ -52,7 +52,7 @@ class ModelArguments:
     num_bits: int = field(default=4)
     num_iter: int = field(default=1)
     reduced_rank: int = field(default=8)
-    model_zoo: str = field(default='./')
+    path_to_model_zoo: str = field(default='./')
     ckpt_path: Optional[str] = field(default=None)
 
 
@@ -194,7 +194,7 @@ def train():
 
     with init_empty_weights():
         config = AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True, use_auth_token=HF_TOKEN)
-        model = AutoModelForCausalLM.from_config(config, trust_remote_code=True, use_auth_token=HF_TOKEN)
+        model = AutoModelForCausalLM.from_config(config)
 
         # Quantize
         allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',

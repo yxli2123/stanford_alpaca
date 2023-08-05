@@ -1,5 +1,5 @@
 python train.py \
-    --model_name_or_path meta-llama/Llama-2-7b \
+    --model_name_or_path meta-llama/Llama-2-7b-hf \
     --data_path ./alpaca_data.json \
     --output_dir ./finetune_llama2 \
     --num_train_epochs 3 \
@@ -17,3 +17,8 @@ python train.py \
     --logging_steps 1 \
     --fsdp "full_shard auto_wrap" \
     --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --num_bits 4 \
+    --num_iter 1 \
+    --reduced_rank 8 \
+    --path_to_model_zoo /home/yli3551/yx_model_zoo/
+
