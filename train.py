@@ -12,6 +12,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import copy
 import logging
 from dataclasses import dataclass, field
@@ -19,9 +20,12 @@ from typing import Dict, Optional, Sequence
 
 import torch
 import transformers
+from transformers import AutoConfig, AutoModelForCausalLM
 import utils
 from torch.utils.data import Dataset
 from transformers import Trainer
+
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
 
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
@@ -40,11 +44,16 @@ PROMPT_DICT = {
         "### Instruction:\n{instruction}\n\n### Response:"
     ),
 }
-
+HF_TOKEN = "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"
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: Optional[str] = field(default="facebook/opt-125m")
+    model_name_or_path: Optional[str] = field(default="meta-llama/Llama-2-7b")
+    num_bits: int = field(default=4)
+    num_iter: int = field(default=1)
+    reduced_rank: int = field(default=8)
+    model_zoo: str = field(default='./')
+    ckpt_path: Optional[str] = field(default=None)
 
 
 @dataclass
@@ -183,10 +192,34 @@ def train():
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    model = transformers.AutoModelForCausalLM.from_pretrained(
-        model_args.model_name_or_path,
-        cache_dir=training_args.cache_dir,
+    with init_empty_weights():
+        config = AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True, use_auth_token=HF_TOKEN)
+        model = AutoModelForCausalLM.from_config(config, trust_remote_code=True, use_auth_token=HF_TOKEN)
+
+        # Quantize
+        allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',
+                      'q_proj', 'v_proj', 'k_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj']
+        block_name = ['pooler', 'classifier', 'LayerNorm', 'embeddings', 'embed']
+        utils.substitute_layer_weights_iter_quant(model,
+                                                  allow_name=allow_name,
+                                                  block_name=block_name,
+                                                  reduced_rank=model_args.reduced_rank,
+                                                  num_bits=model_args.num_bits,
+                                                  num_iter=model_args.num_iter,
+                                                  load=True,
+                                                  enable_lora=True)
+
+    torch.cuda.empty_cache()
+    ckpt_dir = os.path.join(model_args.path_to_model_zoo, model_args.model_name_or_path.split('/')[-1],
+                            f"bit{model_args.num_bits}", f"iter{model_args.num_iter}", f"rank{model_args.reduced_rank}")
+
+    model = load_checkpoint_and_dispatch(
+        model, ckpt_dir, device_map="auto", no_split_module_classes=["GPTJBlock"]
     )
+
+    print(model)
+    for n, p in model.named_parameters():
+        print(n, p.size(), p.max().item(), p.min().item(), p.mean().item())
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
