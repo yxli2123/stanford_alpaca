@@ -351,7 +351,7 @@ class QLinearLR(nn.Module):
         self.lora_A = nn.Parameter(torch.empty((reduced_rank, in_features), dtype=torch.float32))
         self.lora_B = nn.Parameter(torch.empty((out_features, reduced_rank), dtype=torch.float32))
         
-        if bias:
+        if bias is not None:
             self.bias = nn.Parameter(torch.empty(out_features, dtype=torch.float32), requires_grad=False)
         else:
             self.bias = None
