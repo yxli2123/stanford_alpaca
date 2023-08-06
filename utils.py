@@ -350,11 +350,8 @@ class QLinearLR(nn.Module):
         self.register_buffer('absmax', torch.empty((in_features * out_features // block_size, 1), dtype=torch.float32))
         self.lora_A = nn.Parameter(torch.empty((reduced_rank, in_features), dtype=torch.float32))
         self.lora_B = nn.Parameter(torch.empty((out_features, reduced_rank), dtype=torch.float32))
-        
-        if bias is not None:
-            self.bias = nn.Parameter(torch.empty(out_features, dtype=torch.float32), requires_grad=False)
-        else:
-            self.bias = None
+
+        self.bias = bias
 
         self.weight_size = torch.Size([out_features, in_features])
         self.weight_type = torch.float32
@@ -365,15 +362,11 @@ class QLinearLR(nn.Module):
         ret = input @ weight.T
         lora = (input @ self.lora_A.T) @ self.lora_B.T if self.enable_lora else 0
 
-        return ret + lora + self.bias if self.bias else ret + lora
+        return ret + lora + self.bias if self.bias is not None else ret + lora
 
-    def initial_backbone(self, qweight, absmax, bias=None):
+    def initial_backbone(self, qweight, absmax):
         self.qweight = qweight
         self.absmax = absmax
-        if not self.bias and not bias:
-            self.bias = bias
-        elif not bias:
-            print("Warning: No bias at initialization, but pass bias")
 
     def initial_lora(self, lora_A, lora_B):
         self.lora_A.data = lora_A
