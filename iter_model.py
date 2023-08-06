@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM
 import utils
 import argparse
 import os
@@ -12,15 +12,15 @@ HF_TOKEN = "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"
 def main(reduced_rank, num_iter, num_bits):
     accelerator = Accelerator()
     hf_token = "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"
-    model = AutoModelForCausalLM.from_pretrained(args.model_name,
+    model = model = AutoModelForSeq2SeqLM.from_pretrained(args.model_name,
                                                  device_map='auto',
                                                  torch_dtype=torch.float,
-                                                 use_auth_token=hf_token,
                                                  trust_remote_code=True)
 
     # Quantize
     allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',
-                  'q_proj', 'v_proj', 'k_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj']
+                  'q_proj', 'v_proj', 'k_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj',
+                  'out_proj', 'fc1', 'fc2']
     block_name = ['pooler', 'classifier', 'LayerNorm', 'embeddings']
     utils.substitute_layer_weights_iter_quant(model,
                                               allow_name=allow_name,
@@ -39,8 +39,8 @@ def main(reduced_rank, num_iter, num_bits):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_zoo_dir', type=str, default='/home/yli3551/yixiao_model_zoo')
-    parser.add_argument('--model_name', type=str, default='meta-llama/Llama-2-7b-hf',
-                        help='tiiuae/falcon-7b, meta-llama/Llama-2-7b-hf, meta-llama/Llama-2-7b-chat-hf')
+    parser.add_argument('--model_name', type=str, default='facebook/bart-large',
+                        help='tiiuae/falcon-7b, meta-llama/Llama-2-7b-hf, meta-llama/Llama-2-7b-chat-hf, facebook/bart-large')
     parser.add_argument('--num_bits', type=int, default=2)
     parser.add_argument('--reduced_rank', type=int, default=8)
     parser.add_argument('--num_iter', type=int, default=5)
