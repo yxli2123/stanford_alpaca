@@ -339,7 +339,7 @@ class QLinearLR(nn.Module):
                  num_bits: int,
                  block_size=64,
                  enable_lora=True,
-                 bias=False,
+                 bias=None,
                  ):
         super().__init__()
         self.num_bits = num_bits
