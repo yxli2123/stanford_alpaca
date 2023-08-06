@@ -15,10 +15,8 @@ python train.py \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
-    --fsdp "full_shard auto_wrap" \
-    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
     --num_bits 4 \
     --num_iter 1 \
     --reduced_rank 8 \
-    --path_to_model_zoo /home/yli3551/yx_model_zoo/
+    --path_to_model_zoo /home/yli3551/yixiao_model_zoo/
 
