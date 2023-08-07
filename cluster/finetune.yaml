@@ -2,7 +2,8 @@ description: qlora_alpaca
 
 target:
   service: aml
-  name: tscience-a100-80g-eastus
+  # name: tscience-a100-80g-eastus
+  name: A100-80G-PCIE-westus3
   # name: V10032G
   # name: A100EastUS
   # name: openai-A10080G
@@ -27,7 +28,7 @@ environment:
 storage:
   output:
     storage_account_name: tsinterns
-    container_name: qlora
+    container_name: t-qingru
     mount_dir: /mnt/t-qingru
 
 code:
@@ -41,11 +42,7 @@ jobs:
     container_args:
       cpus: 32
   command:
-    - CUDA_VISIBLE_DEVICES=0 sh train.sh 2 0 8 1e-5
-    - CUDA_VISIBLE_DEVICES=1 sh train.sh 2 0 8 3e-5
-    - CUDA_VISIBLE_DEVICES=2 sh train.sh 2 0 8 5e-5
-    - CUDA_VISIBLE_DEVICES=3 sh train.sh 2 0 8 9e-5
-    - CUDA_VISIBLE_DEVICES=4 sh train.sh 2 1 8 1e-5
-    - CUDA_VISIBLE_DEVICES=5 sh train.sh 2 1 8 3e-5
-    - CUDA_VISIBLE_DEVICES=6 sh train.sh 2 1 8 5e-5
-    - CUDA_VISIBLE_DEVICES=7 sh train.sh 2 1 8 9e-5
+    - python train.py --num_bits 2 --num_iter 1 --reduced_rank 8 --learning_rate 1e-5 --seed 42 --model_name_or_path meta-llama/Llama-2-7b-hf --data_path ./alpaca_data.json --output_dir /mnt/t-qingru/qqlora/exp_results --num_train_epochs 3 --per_device_train_batch_size 16 --per_device_eval_batch_size 16 --gradient_accumulation_steps 4 --evaluation_strategy "steps" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --weight_decay 0. --warmup_ratio 0.03 --lr_scheduler_type "cosine" --logging_steps 1 --path_to_model_zoo /mnt/t-qingru/yixiao_model_zoo
+    - python train.py --num_bits 2 --num_iter 1 --reduced_rank 8 --learning_rate 7e-5 --seed 42 --model_name_or_path meta-llama/Llama-2-7b-hf --data_path ./alpaca_data.json --output_dir /mnt/t-qingru/qqlora/exp_results --num_train_epochs 3 --per_device_train_batch_size 16 --per_device_eval_batch_size 16 --gradient_accumulation_steps 4 --evaluation_strategy "steps" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --weight_decay 0. --warmup_ratio 0.03 --lr_scheduler_type "cosine" --logging_steps 1 --path_to_model_zoo /mnt/t-qingru/yixiao_model_zoo
+    - python train.py --num_bits 2 --num_iter 0 --reduced_rank 8 --learning_rate 1e-5 --seed 42 --model_name_or_path meta-llama/Llama-2-7b-hf --data_path ./alpaca_data.json --output_dir /mnt/t-qingru/qqlora/exp_results --num_train_epochs 3 --per_device_train_batch_size 16 --per_device_eval_batch_size 16 --gradient_accumulation_steps 4 --evaluation_strategy "steps" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --weight_decay 0. --warmup_ratio 0.03 --lr_scheduler_type "cosine" --logging_steps 1 --path_to_model_zoo /mnt/t-qingru/yixiao_model_zoo
+    - python train.py --num_bits 2 --num_iter 0 --reduced_rank 8 --learning_rate 7e-5 --seed 42 --model_name_or_path meta-llama/Llama-2-7b-hf --data_path ./alpaca_data.json --output_dir /mnt/t-qingru/qqlora/exp_results --num_train_epochs 3 --per_device_train_batch_size 16 --per_device_eval_batch_size 16 --gradient_accumulation_steps 4 --evaluation_strategy "steps" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --weight_decay 0. --warmup_ratio 0.03 --lr_scheduler_type "cosine" --logging_steps 1 --path_to_model_zoo /mnt/t-qingru/yixiao_model_zoo

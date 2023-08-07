@@ -216,7 +216,7 @@ def train():
     model = load_checkpoint_and_dispatch(
         model, ckpt_dir, device_map="auto", no_split_module_classes=["GPTJBlock"]
     )
-
+    model = model.to('cuda')
     print(model)
     for n, p in model.named_parameters():
         print(n, p.size(), p.max().item(), p.min().item(), p.mean().item())
