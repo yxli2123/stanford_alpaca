@@ -12,7 +12,7 @@ HF_TOKEN = "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"
 def main(reduced_rank, num_iter, num_bits):
     accelerator = Accelerator()
     hf_token = "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"
-    model = model = AutoModelForSeq2SeqLM.from_pretrained(args.model_name,
+    model = AutoModelForSeq2SeqLM.from_pretrained(args.model_name,
                                                  device_map='auto',
                                                  torch_dtype=torch.float,
                                                  trust_remote_code=True)

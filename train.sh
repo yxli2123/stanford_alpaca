@@ -1,7 +1,7 @@
 python train.py \
     --model_name_or_path meta-llama/Llama-2-7b-hf \
     --data_path ./alpaca_data.json \
-    --output_dir ./finetune_llama2 \
+    --output_dir /mnt/t-qingru/qqlora/exp_results \
     --num_train_epochs 3 \
     --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 8 \
@@ -10,13 +10,13 @@ python train.py \
     --save_strategy "steps" \
     --save_steps 2000 \
     --save_total_limit 1 \
-    --learning_rate 2e-5 \
+    --learning_rate "$4" \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
-    --num_bits 4 \
-    --num_iter 1 \
-    --reduced_rank 8 \
-    --path_to_model_zoo /home/yli3551/yixiao_model_zoo/
+    --num_bits "$1" \
+    --num_iter "$2" \
+    --reduced_rank "$3" \
+    --path_to_model_zoo /mnt/t-qingru/yixiao_model_zoo
 
