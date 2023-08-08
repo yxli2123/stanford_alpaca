@@ -46,6 +46,7 @@ PROMPT_DICT = {
 }
 HF_TOKEN = "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"
 
+
 @dataclass
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default="meta-llama/Llama-2-7b")
@@ -72,9 +73,9 @@ class TrainingArguments(transformers.TrainingArguments):
 
 
 def smart_tokenizer_and_embedding_resize(
-    special_tokens_dict: Dict,
-    tokenizer: transformers.PreTrainedTokenizer,
-    model: transformers.PreTrainedModel,
+        special_tokens_dict: Dict,
+        tokenizer: transformers.PreTrainedTokenizer,
+        model: transformers.PreTrainedModel,
 ):
     """Resize tokenizer and embedding.
 
@@ -119,9 +120,9 @@ def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedToken
 
 
 def preprocess(
-    sources: Sequence[str],
-    targets: Sequence[str],
-    tokenizer: transformers.PreTrainedTokenizer,
+        sources: Sequence[str],
+        targets: Sequence[str],
+        tokenizer: transformers.PreTrainedTokenizer,
 ) -> Dict:
     """Preprocess the data by tokenizing."""
     examples = [s + t for s, t in zip(sources, targets)]
@@ -191,9 +192,16 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
 def train():
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    training_args.output_dir = os.path.join(training_args.output_dir, "alpaca",
+                                            model_args.model_name_or_path.split('/')[-1],
+                                            f"bit{model_args.num_bits}", f"iter{model_args.num_iter}",
+                                            f"rank{model_args.reduced_rank}",
+                                            f"lr_{training_args.learning_rate}", f"seed{training_args.seed}")
 
     with init_empty_weights():
-        config = AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True, use_auth_token=HF_TOKEN)
+        config = AutoConfig.from_pretrained(model_args.model_name_or_path,
+                                            trust_remote_code=True,
+                                            use_auth_token=HF_TOKEN)
         model = AutoModelForCausalLM.from_config(config)
 
         # Quantize
@@ -216,7 +224,7 @@ def train():
     model = load_checkpoint_and_dispatch(
         model, ckpt_dir, device_map="auto", no_split_module_classes=["GPTJBlock"]
     )
-    model = model.to('cuda')
+
     print(model)
     for n, p in model.named_parameters():
         print(n, p.size(), p.max().item(), p.min().item(), p.mean().item())
