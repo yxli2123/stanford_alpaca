@@ -12,10 +12,11 @@ HF_TOKEN = "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"
 def main(reduced_rank, num_iter, num_bits):
     accelerator = Accelerator()
     hf_token = "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"
-    model = AutoModelForSeq2SeqLM.from_pretrained(args.model_name,
+    model = AutoModelForCausalLM.from_pretrained(args.model_name,
                                                  device_map='auto',
                                                  torch_dtype=torch.float,
-                                                 trust_remote_code=True)
+                                                 trust_remote_code=True,
+                                                 use_auth=hf_token)
 
     # Quantize
     allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',
@@ -38,8 +39,8 @@ def main(reduced_rank, num_iter, num_bits):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_zoo_dir', type=str, default='/home/yli3551/yixiao_model_zoo')
-    parser.add_argument('--model_name', type=str, default='facebook/bart-large',
+    parser.add_argument('--model_zoo_dir', type=str, default='/mnt/t-qingru/yixiao_model_zoo')
+    parser.add_argument('--model_name', type=str, default='meta-llama/Llama-2-7b-hf',
                         help='tiiuae/falcon-7b, meta-llama/Llama-2-7b-hf, meta-llama/Llama-2-7b-chat-hf, facebook/bart-large')
     parser.add_argument('--num_bits', type=int, default=2)
     parser.add_argument('--reduced_rank', type=int, default=8)
