@@ -198,43 +198,48 @@ def train():
                                             f"rank{model_args.reduced_rank}",
                                             f"lr_{training_args.learning_rate}", f"seed{training_args.seed}")
 
-    with init_empty_weights():
-        config = AutoConfig.from_pretrained(model_args.model_name_or_path,
-                                            trust_remote_code=True,
-                                            use_auth_token=HF_TOKEN)
-        model = AutoModelForCausalLM.from_config(config)
+    training_args.overwrite_output_dir=True
+    config = AutoConfig.from_pretrained(model_args.model_name_or_path,
+                                        trust_remote_code=True,
+                                        use_auth_token=HF_TOKEN)
+    model = AutoModelForCausalLM.from_config(config)
 
-        # Quantize
-        allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',
-                      'q_proj', 'v_proj', 'k_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj']
-        block_name = ['pooler', 'classifier', 'LayerNorm', 'embeddings', 'embed']
-        utils.substitute_layer_weights_iter_quant(model,
-                                                  allow_name=allow_name,
-                                                  block_name=block_name,
-                                                  reduced_rank=model_args.reduced_rank,
-                                                  num_bits=model_args.num_bits,
-                                                  num_iter=model_args.num_iter,
-                                                  load=True,
-                                                  enable_lora=True)
+    # Quantize
+    allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',
+                  'q_proj', 'v_proj', 'k_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj']
+    block_name = ['pooler', 'classifier', 'LayerNorm', 'embeddings', 'embed']
+    utils.substitute_layer_weights_iter_quant(model,
+                                              allow_name=allow_name,
+                                              block_name=block_name,
+                                              reduced_rank=model_args.reduced_rank,
+                                              num_bits=model_args.num_bits,
+                                              num_iter=model_args.num_iter,
+                                              load=True,
+                                              enable_lora=True)
 
     torch.cuda.empty_cache()
     ckpt_dir = os.path.join(model_args.path_to_model_zoo, model_args.model_name_or_path.split('/')[-1],
                             f"bit{model_args.num_bits}", f"iter{model_args.num_iter}", f"rank{model_args.reduced_rank}")
 
-    model = load_checkpoint_and_dispatch(
-        model, ckpt_dir, device_map="auto", no_split_module_classes=["GPTJBlock"]
-    )
-
+    # model = load_checkpoint_and_dispatch(
+    #     model, ckpt_dir, no_split_module_classes=["GPTJBlock"]
+    # )
+    model_param_dict = torch.load(os.path.join(ckpt_dir, "pytorch_model.bin"))
+    print(model_param_dict)
+    model.load_state_dict(model_param_dict)
     print(model)
+
     for n, p in model.named_parameters():
         print(n, p.size(), p.max().item(), p.min().item(), p.mean().item())
 
+    os.system("nvidia-smi")
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
         model_max_length=training_args.model_max_length,
-        padding_side="right",
+        padding_side="left",
         use_fast=False,
+        use_auth_token=HF_TOKEN
     )
     special_tokens_dict = dict()
     if tokenizer.pad_token is None:

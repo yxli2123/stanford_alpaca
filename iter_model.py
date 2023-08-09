@@ -16,7 +16,8 @@ def main(reduced_rank, num_iter, num_bits):
                                                  device_map='auto',
                                                  torch_dtype=torch.float,
                                                  trust_remote_code=True,
-                                                 use_auth=hf_token)
+                                                 use_auth_token=hf_token,
+                                                 )
 
     # Quantize
     allow_name = ['query_key_value', 'dense', 'dense_h_to_4h', 'dense_4h_to_h',
